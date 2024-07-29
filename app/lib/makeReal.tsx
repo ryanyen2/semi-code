@@ -1,9 +1,14 @@
 import { Editor, createShapeId, getSvgAsImage, track } from '@tldraw/tldraw'
-import { getSelectionAsText } from './lib/getSelectionAsText'
-import { getHtmlFromOpenAI } from './lib/getHtmlFromOpenAI'
-import { blobToBase64 } from './lib/blobToBase64'
-import { addGridToSvg } from './lib/addGridToSvg'
-import { PreviewShape } from './PreviewShape/PreviewShape'
+import { getSelectionAsText } from './getSelectionAsText'
+import { getHtmlFromOpenAI } from './getHtmlFromOpenAI'
+import { getCodeFromOpenAI } from './getCodeFromOpenAI'
+
+import { blobToBase64 } from './blobToBase64'
+import { addGridToSvg } from './addGridToSvg'
+import { PreviewShape } from '../PreviewShape/PreviewShape'
+import { CodeEditorShape } from '../CodeEditorShape/CodeEditorShape'
+
+import { downloadDataURLAsFile } from './downloadDataUrlAsFile'
 
 export async function makeReal(editor: Editor, apiKey: string) {
 	// Get the selected shapes (we need at least one)
@@ -14,12 +19,26 @@ export async function makeReal(editor: Editor, apiKey: string) {
 	// Create the preview shape
 	const { maxX, midY } = editor.getSelectionPageBounds()!
 	const newShapeId = createShapeId()
-	editor.createShape<PreviewShape>({
+	// editor.createShape<PreviewShape>({
+	// 	id: newShapeId,
+	// 	type: 'response',
+	// 	x: maxX + 60, // to the right of the selection
+	// 	y: midY - (540 * 2) / 3 / 2, // half the height of the preview's initial shape
+	// 	props: { html: '' },
+	// })
+	// TODO: d1eterine different actions: {1: edit: using diff view; 2: generate code; 3: execute code}
+
+	editor.createShape<CodeEditorShape>({
 		id: newShapeId,
-		type: 'response',
-		x: maxX + 60, // to the right of the selection
-		y: midY - (540 * 2) / 3 / 2, // half the height of the preview's initial shape
-		props: { html: '' },
+		type: 'code-editor-shape',
+		x: maxX + 60,
+		y: midY - (540 * 2) / 3 / 2,
+		props: {
+			html: 'generating code...',
+			w: 200,
+			h: 300,
+			code: ''
+		},
 	})
 
 	// Get an SVG based on the selected shapes
@@ -49,20 +68,32 @@ export async function makeReal(editor: Editor, apiKey: string) {
 	// downloadDataURLAsFile(dataUrl, 'tldraw.png')
 
 	// Get any previous previews among the selected shapes
-	const previousPreviews = selectedShapes.filter((shape) => {
-		return shape.type === 'response'
-	}) as PreviewShape[]
+	// const previousPreviews = selectedShapes.filter((shape) => {
+	// 	return shape.type === 'response'
+	// }) as PreviewShape[]
+	const previousCodeEditors = selectedShapes.filter((shape) => {
+		return shape.type === 'code-editor-shape'
+	}) as CodeEditorShape[]
+
+	// console.log('previousPreviews\n', previousPreviews)
 
 	// Send everything to OpenAI and get some HTML back
 	try {
-		const json = await getHtmlFromOpenAI({
+
+		const json = await getCodeFromOpenAI({
 			image: dataUrl,
 			apiKey,
 			text: getSelectionAsText(editor),
-			previousPreviews,
-			grid,
-			theme: editor.user.getUserPreferences().isDarkMode ? 'dark' : 'light',
-		})
+			// grid,
+			previousCodeEditors,
+		});
+		// const json = await getHtmlFromOpenAI({
+		// 	image: dataUrl,
+		// 	apiKey,
+		// 	text: getSelectionAsText(editor),
+		// 	previousPreviews,
+		// })
+		console.log('res\n', json)
 
 		if (!json) {
 			throw Error('Could not contact OpenAI.')
@@ -72,28 +103,38 @@ export async function makeReal(editor: Editor, apiKey: string) {
 			throw Error(`${json.error.message?.slice(0, 128)}...`)
 		}
 
-		// Extract the HTML from the response
-		const message = json.choices[0].message.content
-		const start = message.indexOf('<!DOCTYPE html>')
-		const end = message.indexOf('</html>')
-		const html = message.slice(start, end + '</html>'.length)
+		// const message = json.choices[0].message.content
 
-		// No HTML? Something went wrong
-		if (html.length < 100) {
+		// editor.updateShape<PreviewShape>({
+		// 	id: newShapeId,
+		// 	type: 'response',
+		// 	props: {
+		// 		html: message,
+		// 	},
+		// })
+
+		const message = json.choices[0].message.content
+		const code = message.match(/```(python|javascript)([\s\S]*?)```/)?.[2] || message
+		if (code.length < 30) {
 			console.warn(message)
 			throw Error('Could not generate a design from those wireframes.')
 		}
 
-		// Update the shape with the new props
-		editor.updateShape<PreviewShape>({
+
+		// calculate height of code editor (line-height = 1.4)
+		const lines = code.split('\n').length;
+		const height = Math.min(300, lines * 1.4 * 16)
+
+		editor.updateShape<CodeEditorShape>({
 			id: newShapeId,
-			type: 'response',
+			type: 'code-editor-shape',
 			props: {
-				html,
+				html: code,
+				h: height,
+				w: 400,
+				code: code
 			},
 		})
-
-		console.log(`Response: ${message}`)
 	} catch (e) {
 		// If anything went wrong, delete the shape.
 		editor.deleteShape(newShapeId)

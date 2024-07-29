@@ -56,12 +56,7 @@ export class PreviewShapeUtil extends BaseBoxShapeUtil<PreviewShape> {
 		// Kind of a hack—we're preventing users from pinching-zooming into the iframe
 		const htmlToUse = shape.props.html.replace(
 			`</body>`,
-			`<style>
-				body {
-					touch-action: none;
-				}
-			</style>
-			<script src="https://unpkg.com/html2canvas"></script><script>
+			`<script src="https://unpkg.com/html2canvas"></script><script>
 			// send the screenshot to the parent window
   			window.addEventListener('message', function(event) {
     		if (event.data.action === 'take-screenshot' && event.data.shapeid === "${shape.id}") {
@@ -76,12 +71,7 @@ export class PreviewShapeUtil extends BaseBoxShapeUtil<PreviewShape> {
 		)
 
 		return (
-			<HTMLContainer
-				className="tl-embed-container"
-				id={shape.id}
-				onTouchMove={(e) => e.preventDefault()} style={{ touchAction: 'none' }}
-				draggable={false}
-			>
+			<HTMLContainer className="tl-embed-container" id={shape.id}>
 				{htmlToUse ? (
 					<iframe
 						id={`iframe-1-${shape.id}`}
@@ -90,7 +80,6 @@ export class PreviewShapeUtil extends BaseBoxShapeUtil<PreviewShape> {
 						height={toDomPrecision(shape.props.h)}
 						draggable={false}
 						style={{
-							touchAction: isEditing ? 'auto' : 'none',
 							pointerEvents: isEditing ? 'auto' : 'none',
 							boxShadow,
 							border: '1px solid var(--color-panel-contrast)',

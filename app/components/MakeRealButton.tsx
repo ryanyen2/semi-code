@@ -1,6 +1,7 @@
 import { useEditor, useToasts } from '@tldraw/tldraw'
-import { useCallback } from 'react'
-import { makeReal } from '../makeReal'
+import { useCallback, useEffect } from 'react'
+import { makeReal } from '../lib/makeReal'
+// import { CodeEditorShape } from '../CodeEditorShape/CodeEditorShape'
 
 export function MakeRealButton() {
 	const editor = useEditor()

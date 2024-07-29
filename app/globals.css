@@ -38,6 +38,13 @@
 	bottom: 60px;
 }
 
+.shareButtonGroup {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+}
+
 .makeRealButton {
 	background: var(--color-primary);
 	color: white;
@@ -53,6 +60,63 @@
 .makeRealButton:hover {
 	opacity: 0.95;
 }
+
+.executeCodeButton {
+	background: var(--color-primary);
+	color: white;
+	border: none;
+	font: inherit;
+	font-weight: 600;
+	padding: var(--space-3) var(--space-4);
+	border-radius: var(--radius-2);
+	margin: var(--space-3);
+	cursor: pointer;
+	pointer-events: all;
+}
+.executeCodeButton:hover {
+	opacity: 0.95;
+}
+
+/* ---------- Execute Result ---------------- */
+
+.exec-res-table {
+	width: 100%;
+	text-align: left;
+	color: #718096;
+	border-collapse: collapse;
+	border-radius: 15px;
+	overflow: hidden;
+  }
+  
+  .exec-res-table thead {
+	font-size: 12px;
+	color: #4a5568;
+	background-color: #f7fafc;
+  }
+  
+  .exec-res-table thead th {
+	padding: 12px 15px;
+  }
+  
+  .exec-res-table tbody {
+	background-color: #fff;
+  }
+  
+  .exec-res-table tbody tr {
+	color: #718096;
+	border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .exec-res-table tbody tr:hover {
+	background-color: #f7fafc;
+  }
+  
+  .exec-res-table tbody td {
+	padding: 12px 15px;
+  }
+  
+
+
 
 /* ------------------ Api Key Input ----------------- */
 
